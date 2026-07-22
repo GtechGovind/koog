@@ -49,7 +49,9 @@ dependencies {
 
     implementation(libs.ktor.client.cio)
     implementation(libs.ktor.server.cio)
+    implementation(libs.ktor.server.content.negotiation)
     implementation(libs.ktor.server.sse)
+    implementation(libs.ktor.serialization.kotlinx.json)
 
     runtimeOnly(libs.postgresql)
 
@@ -138,6 +140,7 @@ registerRunExampleTask("runExampleSQLPersistentAgent", "ai.koog.agents.example.s
 registerRunExampleTask("runExampleWebSearchAgent", "ai.koog.agents.example.websearch.WebSearchAgentKt")
 registerRunExampleTask("runExampleStreamingWithTools", "ai.koog.agents.example.streaming.StreamingAgentWithToolsKt")
 registerRunExampleTask("runExampleStreamingKtorServer", "ai.koog.agents.example.streaming.StreamingKtorServerKt")
+registerRunExampleTask("runExampleAgentWorkspaceServer", "ai.koog.agents.example.workspace.AgentWorkspaceServerKt")
 
 registerRunExampleTask("runExampleGOAPGrouper", "ai.koog.agents.example.goap.GrouperAgentKt")
 registerRunExampleTask("runExampleChatMemory", "ai.koog.agents.example.chatmemory.ChatMemoryExampleKt")

@@ -51,10 +51,44 @@ Welcome to the **Koog Framework Simple Examples** collection! This project showc
 | **Calculator Local**        | Calculator using local LLM models                                 | `runExampleCalculatorLocal`         | -                                                    |
 | **Streaming with Tools**    | Agent demonstrating streaming responses while using tools         | `runExampleStreamingWithTools`      | -                                                    |
 | **Streaming Ktor Server**   | HTTP server streaming LLM responses in real-time via Ktor         | `runExampleStreamingKtorServer`     | -                                                    |
+| **Agent Workspace Server**  | Restart-safe agent suspension, SSE replay, approval, and artifacts | `runExampleAgentWorkspaceServer`    | -                                                    |
 | **Banking Routing**         | Comprehensive AI banking assistant with routing capabilities      | `runExampleRoutingViaGraph`         | [📓 Banking.ipynb](../notebooks/Banking.ipynb)       |
 | **Banking Agents as Tools** | Banking routing using agents as tools pattern                     | `runExampleRoutingViaAgentsAsTools` | -                                                    |
 | **Chess**                   | Intelligent chess-playing agent with interactive choice selection | -                                   | [📓 Chess.ipynb](../notebooks/Chess.ipynb)           |
 | **Guesser**                 | Number-guessing agent implementing binary search strategy         | `runExampleGuesser`                 | [📓 Guesser.ipynb](../notebooks/Guesser.ipynb)       |
+
+#### Restart-safe agent workspace
+
+`runExampleAgentWorkspaceServer` starts a deterministic Koog graph on `127.0.0.1:8080`. It does
+not call the configured model, so Ollama does not need to be running. Start a supervised run and
+follow its replayable event stream:
+
+```bash
+./gradlew runExampleAgentWorkspaceServer
+curl -X POST http://127.0.0.1:8080/example/runs \
+  -H 'Content-Type: application/json' \
+  -d '{"runId":"demo","service":"checkout"}'
+curl -N 'http://127.0.0.1:8080/agent-workspace/runs/demo/events?after=0'
+```
+
+Once `agent.input_required` appears, the process can be stopped and restarted. The workspace JSON
+and Persistence checkpoint remain under `.koog-workspace-example`. Queue guidance, answer the
+approval, and resume from the durable checkpoint:
+
+```bash
+curl -X POST http://127.0.0.1:8080/example/runs/demo/guidance \
+  -H 'Content-Type: application/json' \
+  -d '{"guidance":"Compare the deployment timestamp with the latency spike."}'
+curl -X POST http://127.0.0.1:8080/agent-workspace/runs/demo/answers \
+  -H 'Content-Type: application/json' \
+  -d '{"requestId":"publish-demo","selectedOptionIds":["approve"],"respondedAt":"2026-01-01T00:00:00Z"}'
+curl -X POST http://127.0.0.1:8080/agent-workspace/runs/demo/resume
+```
+
+Cooperative cancellation is available at
+`POST /agent-workspace/runs/{runId}/cancel`; send `{"mode":"IMMEDIATE"}` or
+`{"mode":"AFTER_NODE"}`. Reconnect the SSE endpoint with its last sequence in `after` to replay
+only missed progress, Markdown, artifact-reference, and completion events.
 
 ### Advanced Features
 
@@ -135,6 +169,7 @@ Run any example using:
 - `runExampleCalculatorLocal` - Calculator with local LLM
 - `runExampleStreamingWithTools` - Streaming responses with tool usage
 - `runExampleStreamingKtorServer` - HTTP server with real-time streaming
+- `runExampleAgentWorkspaceServer` - Restart-safe Ktor agent workspace with typed approval and replayable SSE
 - `runExampleGuesser` - Number guessing game agent
 - `runExampleEssay` - Essay writing agent
 
