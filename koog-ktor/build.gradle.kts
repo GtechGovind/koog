@@ -17,6 +17,8 @@ kotlin {
                 api(libs.kotlinx.coroutines.core)
                 api(libs.kotlinx.serialization.json)
                 api(libs.ktor.server.core)
+                api(libs.ktor.server.sse)
+                api(project(":agents:agents-features:agents-features-workspace"))
                 implementation(project(":http-client:http-client-ktor"))
             }
         }
