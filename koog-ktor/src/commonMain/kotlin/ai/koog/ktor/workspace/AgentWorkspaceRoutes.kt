@@ -23,16 +23,25 @@ public data class AgentWorkspaceCancellationRequest(
     val reason: String? = null,
 )
 
+/** Host callback that restores application input and a Persistence checkpoint before resuming a run. */
+public fun interface AgentWorkspaceResumeHandler {
+    /** Claims and resumes [runId], or throws when the persisted run cannot be resumed. */
+    public suspend fun resume(runId: String)
+}
+
 /**
  * Installs generic control and replayable SSE routes for [controller].
  *
  * The host application must install Ktor ContentNegotiation with kotlinx JSON and the SSE plugin.
- * Routes are mounted below [path] as `/runs/{runId}/events`, `/answers`, and `/cancel`.
+ * Routes are mounted below [path] as `/runs/{runId}/events`, `/answers`, `/cancel`, and,
+ * when [resumeHandler] is supplied, `/resume`. The callback keeps checkpoint and input loading
+ * application-owned while the framework supplies a consistent transport contract.
  */
 public fun Route.agentWorkspaceRoutes(
     controller: AgentWorkspaceController,
     path: String = "/agent-workspace",
     pollIntervalMillis: Long = 250L,
+    resumeHandler: AgentWorkspaceResumeHandler? = null,
 ) {
     require(pollIntervalMillis in 50L..60_000L) { "SSE poll interval must be between 50ms and 60s" }
 
@@ -64,6 +73,14 @@ public fun Route.agentWorkspaceRoutes(
         val request = call.receive<AgentWorkspaceCancellationRequest>()
         controller.requestCancellation(runId, request.mode, request.reason)
         call.respond(HttpStatusCode.Accepted)
+    }
+
+    if (resumeHandler != null) {
+        post("$path/runs/{runId}/resume") {
+            val runId = requireNotNull(call.parameters["runId"]) { "Missing run id" }
+            resumeHandler.resume(runId)
+            call.respond(HttpStatusCode.Accepted)
+        }
     }
 }
 
