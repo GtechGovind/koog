@@ -9,7 +9,7 @@ import kotlin.test.assertTrue
 
 class AgentWorkspaceRoutesTest {
     @Test
-    fun testWorkspaceEventMapsToReplayableSse(): Unit {
+    fun testWorkspaceEventMapsToReplayableSse() {
         val event = AgentWorkspaceEvent(
             sequence = 42,
             runId = "run-1",
